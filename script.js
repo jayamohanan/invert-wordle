@@ -1,10 +1,29 @@
+// Static grid words (set these as needed)
+let staticGridWords = [
+  '', '', '', '', '' // Fill with 5 words as needed
+];
+
+function renderStaticGrid() {
+  const staticGridDiv = document.querySelector('.static-grid');
+  if (!staticGridDiv) return;
+  staticGridDiv.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement('div');
+      tile.className = 'tile static-tile';
+      const word = staticGridWords[r] || '';
+      tile.textContent = word[c] ? word[c].toUpperCase() : '';
+      staticGridDiv.appendChild(tile);
+    }
+  }
+}
 // Ensure game initializes on page load
 window.onload = () => {
   loadWordLists();
 };
 // Wordle Clone JS
 const WORD_LENGTH = 5;
-const MAX_GUESSES = 6;
+const MAX_GUESSES = 5;
 let answerList = [];
 let guessList = [];
 let answer = '';
@@ -41,6 +60,7 @@ function startGame() {
   lastFilled = { row: null, col: null };
   renderGrid();
   renderKeyboard();
+  renderStaticGrid();
 }
 
 function renderGrid() {
@@ -72,40 +92,9 @@ function renderGrid() {
 function renderKeyboard() {
   const keyboard = document.querySelector('.keyboard');
   if (!keyboard) return;
+  keyboard.style.display = 'none'; // Hide the keyboard
   keyboard.innerHTML = '';
-  const rows = [
-    'qwertyuiop',
-    'asdfghjkl',
-    'zxcvbnm'
-  ];
-  const keyStates = getKeyStates();
-  rows.forEach((row, i) => {
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'key-row';
-    if (i === 2) {
-      const enter = document.createElement('button');
-      enter.className = 'key';
-      enter.textContent = 'Enter';
-      enter.onclick = () => handleKey('Enter');
-      rowDiv.appendChild(enter);
-    }
-    for (const ch of row) {
-      const key = document.createElement('button');
-      key.className = 'key';
-      key.textContent = ch;
-      if (keyStates[ch]) key.classList.add(keyStates[ch]);
-      key.onclick = () => handleKey(ch);
-      rowDiv.appendChild(key);
-    }
-    if (i === 2) {
-      const del = document.createElement('button');
-      del.className = 'key';
-      del.innerHTML = '⌫';
-      del.onclick = () => handleKey('Backspace');
-      rowDiv.appendChild(del);
-    }
-    keyboard.appendChild(rowDiv);
-  });
+  // ...existing code...
 }
 
 function getKeyStates() {

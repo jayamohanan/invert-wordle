@@ -1,5 +1,6 @@
 // Get Wordle-style color for each letter in a guess vs answer
 function getWordleRowResult(guess, answer) {
+  return;
   const result = Array(guess.length).fill('absent');
   const answerArr = answer.split('');
   const guessArr = guess.split('');
@@ -114,6 +115,8 @@ function renderWordGrid(containerSelector, words, showLetters = true, colorRows 
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
   for (let r = 0; r < 5; r++) {
+    const rowDiv = document.createElement('div');
+   rowDiv.className = 'grid-row';
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
@@ -128,8 +131,9 @@ function renderWordGrid(containerSelector, words, showLetters = true, colorRows 
       }
       tile.textContent = letter;
       tile.className = classes.join(' ');
-      gridDiv.appendChild(tile);
+      rowDiv.appendChild(tile);
     }
+    gridDiv.appendChild(rowDiv);
   }
 }
 

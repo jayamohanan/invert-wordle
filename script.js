@@ -28,25 +28,38 @@ let staticGridWords = ['', '', '', '', ''];
 function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
   renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
-  // Add click handler to the entire grid
   const bottomGridDiv = document.querySelector('.bottom-grid');
   if (!bottomGridDiv) return;
-  bottomGridDiv.onclick = (e) => {
-    const tile = e.target;
-    if (!tile.classList.contains('tile')) return;
-    const idx = Array.from(bottomGridDiv.children).indexOf(tile);
-    if (idx === -1) return;
-    const row = Math.floor(idx / 5);
-    if (staticGridWords[row]) {
-      const emptyIdx = topGridWords.findIndex(w => !w);
-      if (emptyIdx !== -1) {
-        topGridWords[emptyIdx] = staticGridWords[row];
-        staticGridWords[row] = '';
-        renderTopGrid();
-        renderBottomGrid();
+  // Make each row draggable (attach listeners to row divs)
+  Array.from(bottomGridDiv.children).forEach((rowDiv, rowIdx) => {
+    rowDiv.setAttribute('draggable', 'true');
+    rowDiv.addEventListener('dragstart', function(e) {
+      console.log('Drag started for row', rowIdx);
+      // Create a visual copy for dragging
+      const dragCopy = rowDiv.cloneNode(true);
+      dragCopy.style.opacity = '1';
+      dragCopy.style.background = '#eee';
+      dragCopy.style.position = 'fixed';
+      dragCopy.style.pointerEvents = 'none';
+      dragCopy.style.zIndex = '1000';
+      dragCopy.style.left = '-9999px';
+      dragCopy.style.top = '-9999px';
+      dragCopy.style.width = rowDiv.offsetWidth + 'px';
+      dragCopy.style.height = rowDiv.offsetHeight + 'px';
+      document.body.appendChild(dragCopy);
+      e.dataTransfer.setDragImage(dragCopy, rowDiv.offsetWidth/2, rowDiv.offsetHeight/2);
+      rowDiv.style.visibility = 'hidden';
+      e.dataTransfer.setData('text/plain', rowIdx);
+      rowDiv._dragCopy = dragCopy;
+    });
+    rowDiv.addEventListener('dragend', function(e) {
+      rowDiv.style.visibility = '';
+      if (rowDiv._dragCopy) {
+        document.body.removeChild(rowDiv._dragCopy);
+        rowDiv._dragCopy = null;
       }
-    }
-  };
+    });
+  });
 }
 
 // Ensure game initializes on page load
@@ -150,14 +163,16 @@ function renderBottomGrid() {
   bottomGridDiv.onclick = (e) => {
     const tile = e.target;
     if (!tile.classList.contains('tile')) return;
-    const idx = Array.from(bottomGridDiv.children).indexOf(tile);
-    if (idx === -1) return;
-    const row = Math.floor(idx / 5);
-    if (staticGridWords[row]) {
+    // Find the row div that was clicked
+    const rowDiv = tile.parentElement;
+    const rowIdx = Array.from(bottomGridDiv.children).indexOf(rowDiv);
+    console.log('Bottom grid row clicked:', rowIdx);
+    if (rowIdx === -1) return;
+    if (staticGridWords[rowIdx]) {
       const emptyIdx = topGridWords.findIndex(w => !w);
       if (emptyIdx !== -1) {
-        topGridWords[emptyIdx] = staticGridWords[row];
-        staticGridWords[row] = '';
+        topGridWords[emptyIdx] = staticGridWords[rowIdx];
+        staticGridWords[rowIdx] = '';
         renderTopGrid();
         renderBottomGrid();
       }

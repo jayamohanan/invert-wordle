@@ -1,6 +1,5 @@
 // Get Wordle-style color for each letter in a guess vs answer
 function getWordleRowResult(guess, answer) {
-  return;
   const result = Array(guess.length).fill('absent');
   const answerArr = answer.split('');
   const guessArr = guess.split('');
@@ -26,16 +25,16 @@ let topGridWords = ['', '', '', '', ''];
 // Words to display in bottom grid
 let staticGridWords = ['', '', '', '', ''];
 
-function renderStaticGrid() {
+function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
-  renderWordGrid('.static-grid', staticGridWords, true, false, '');
+  renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
   // Add click handler to the entire grid
-  const staticGridDiv = document.querySelector('.static-grid');
-  if (!staticGridDiv) return;
-  staticGridDiv.onclick = (e) => {
+  const bottomGridDiv = document.querySelector('.bottom-grid');
+  if (!bottomGridDiv) return;
+  bottomGridDiv.onclick = (e) => {
     const tile = e.target;
     if (!tile.classList.contains('tile')) return;
-    const idx = Array.from(staticGridDiv.children).indexOf(tile);
+    const idx = Array.from(bottomGridDiv.children).indexOf(tile);
     if (idx === -1) return;
     const row = Math.floor(idx / 5);
     if (staticGridWords[row]) {
@@ -43,8 +42,8 @@ function renderStaticGrid() {
       if (emptyIdx !== -1) {
         topGridWords[emptyIdx] = staticGridWords[row];
         staticGridWords[row] = '';
-        renderGrid();
-        renderStaticGrid();
+        renderTopGrid();
+        renderBottomGrid();
       }
     }
   };
@@ -79,7 +78,7 @@ async function loadWordLists() {
     startGame();
   } catch (e) {
     showMessage('Error loading word lists.');
-    renderGrid();
+    renderTopGrid();
     renderKeyboard();
   }
 }
@@ -104,9 +103,9 @@ function startGame() {
   lastFilled = { row: null, col: null };
   // Shuffle and assign to bottom grid
   staticGridWords = [...selected].sort(() => Math.random() - 0.5);
-  renderGrid();
+  renderTopGrid();
   renderKeyboard();
-  renderStaticGrid();
+  renderBottomGrid();
 }
 
 // Shared grid rendering function for 5x5 grids
@@ -137,21 +136,21 @@ function renderWordGrid(containerSelector, words, showLetters = true, colorRows 
   }
 }
 
-function renderGrid() {
+function renderTopGrid() {
   // Top grid: show colored tiles, no letters
-  renderWordGrid('.grid', topGridWords, false, true, answer);
+  renderWordGrid('.top-grid', topGridWords, false, true, answer);
 }
 
-function renderStaticGrid() {
+function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
-  renderWordGrid('.static-grid', staticGridWords, true, false, '');
+  renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
   // Add click handler to the entire grid
-  const staticGridDiv = document.querySelector('.static-grid');
-  if (!staticGridDiv) return;
-  staticGridDiv.onclick = (e) => {
+  const bottomGridDiv = document.querySelector('.bottom-grid');
+  if (!bottomGridDiv) return;
+  bottomGridDiv.onclick = (e) => {
     const tile = e.target;
     if (!tile.classList.contains('tile')) return;
-    const idx = Array.from(staticGridDiv.children).indexOf(tile);
+    const idx = Array.from(bottomGridDiv.children).indexOf(tile);
     if (idx === -1) return;
     const row = Math.floor(idx / 5);
     if (staticGridWords[row]) {
@@ -159,15 +158,15 @@ function renderStaticGrid() {
       if (emptyIdx !== -1) {
         topGridWords[emptyIdx] = staticGridWords[row];
         staticGridWords[row] = '';
-        renderGrid();
-        renderStaticGrid();
+        renderTopGrid();
+        renderBottomGrid();
       }
     }
   };
 }
 
 function renderGrid() {
-  const gridDiv = document.querySelector('.grid');
+  const gridDiv = document.querySelector('.top-grid');
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
   for (let r = 0; r < MAX_GUESSES; r++) {
@@ -261,7 +260,7 @@ function handleKey(key) {
 }
 
 function revealRow(row) {
-  const gridDiv = document.querySelector('.grid');
+  const gridDiv = document.querySelector('.top-grid');
   if (!gridDiv) return;
   const start = row * WORD_LENGTH;
   for (let c = 0; c < WORD_LENGTH; c++) {

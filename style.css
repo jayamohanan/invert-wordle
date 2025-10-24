@@ -1,3 +1,28 @@
+.tile.tile-outline {
+  background: transparent !important;
+  color: transparent !important;
+  border-width: 2px !important;
+}
+.outline-correct {
+  background: var(--color-correct) !important;
+  border-color: var(--color-correct) !important;
+}
+.outline-present {
+  background: var(--color-present) !important;
+  border-color: var(--color-present) !important;
+}
+.outline-absent {
+  background: var(--color-absent) !important;
+  border-color: var(--color-absent) !important;
+}
+/* Text between grids */
+.between-grids-text {
+  margin: 5px 0;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #444;
+}
 /* Static grid styles */
 .static-grid-container {
   margin-top: 5px;
@@ -9,7 +34,11 @@
   grid-template-rows: repeat(5, 1fr);
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
-  margin: 0.25rem auto 0.1rem auto;
+.static-row {
+  display: flex;
+  gap: 4px;
+}
+  margin: 0;
   padding: 0;
   box-sizing: border-box;
   flex: 0 0 auto;
@@ -85,14 +114,14 @@ header {
   flex: 1 1 auto;
   width: 100vw;
   max-width: 500px;
-  padding: 0.5rem 0 0.5rem 0;
+  padding: 0.2rem 0 0.2rem 0;
   box-sizing: border-box;
   min-height: 0;
 }
 
 .grid {
   display: grid;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-rows: repeat(5, 1fr); /* <-- changed from 6 to 5 */
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   margin: 0.25rem auto 0.1rem auto;

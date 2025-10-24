@@ -1,22 +1,54 @@
-// Static grid words (set these as needed)
-let staticGridWords = [
-  '', '', '', '', '' // Fill with 5 words as needed
-];
-
-function renderStaticGrid() {
-  const staticGridDiv = document.querySelector('.static-grid');
-  if (!staticGridDiv) return;
-  staticGridDiv.innerHTML = '';
-  for (let r = 0; r < 5; r++) {
-    for (let c = 0; c < 5; c++) {
-      const tile = document.createElement('div');
-      tile.className = 'tile static-tile';
-      const word = staticGridWords[r] || '';
-      tile.textContent = word[c] ? word[c].toUpperCase() : '';
-      staticGridDiv.appendChild(tile);
+// Get Wordle-style color for each letter in a guess vs answer
+function getWordleRowResult(guess, answer) {
+  const result = Array(guess.length).fill('absent');
+  const answerArr = answer.split('');
+  const guessArr = guess.split('');
+  // First pass: green
+  for (let i = 0; i < guessArr.length; i++) {
+    if (guessArr[i] === answerArr[i]) {
+      result[i] = 'correct';
+      answerArr[i] = null; // Mark as used
+      guessArr[i] = null;
     }
   }
+  // Second pass: yellow
+  for (let i = 0; i < guessArr.length; i++) {
+    if (guessArr[i] && answerArr.includes(guessArr[i])) {
+      result[i] = 'present';
+      answerArr[answerArr.indexOf(guessArr[i])] = null;
+    }
+  }
+  return result;
 }
+// Hidden words for each row in top grid
+let topGridWords = ['', '', '', '', ''];
+// Words to display in bottom grid
+let staticGridWords = ['', '', '', '', ''];
+
+function renderStaticGrid() {
+  // Bottom grid: show letters, no coloring
+  renderWordGrid('.static-grid', staticGridWords, true, false, '');
+  // Add click handler to the entire grid
+  const staticGridDiv = document.querySelector('.static-grid');
+  if (!staticGridDiv) return;
+  staticGridDiv.onclick = (e) => {
+    const tile = e.target;
+    if (!tile.classList.contains('tile')) return;
+    const idx = Array.from(staticGridDiv.children).indexOf(tile);
+    if (idx === -1) return;
+    const row = Math.floor(idx / 5);
+    if (staticGridWords[row]) {
+      const emptyIdx = topGridWords.findIndex(w => !w);
+      if (emptyIdx !== -1) {
+        topGridWords[emptyIdx] = staticGridWords[row];
+        staticGridWords[row] = '';
+        renderGrid();
+        renderStaticGrid();
+      }
+    }
+  };
+}
+
 // Ensure game initializes on page load
 window.onload = () => {
   loadWordLists();
@@ -52,15 +84,82 @@ async function loadWordLists() {
 }
 
 function startGame() {
-  answer = answerList[Math.floor(Math.random() * answerList.length)];
+  // Select 5 unique words for the level
+  const selected = [];
+  const used = new Set();
+  while (selected.length < 5) {
+    const idx = Math.floor(Math.random() * answerList.length);
+    if (!used.has(answerList[idx])) {
+      selected.push(answerList[idx]);
+      used.add(answerList[idx]);
+    }
+  }
+  topGridWords = [...selected];
+  answer = selected[4]; // 5th word is the answer
   currentRow = 0;
   currentCol = 0;
   isGameOver = false;
   grid = Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill(''));
   lastFilled = { row: null, col: null };
+  // Shuffle and assign to bottom grid
+  staticGridWords = [...selected].sort(() => Math.random() - 0.5);
   renderGrid();
   renderKeyboard();
   renderStaticGrid();
+}
+
+// Shared grid rendering function for 5x5 grids
+function renderWordGrid(containerSelector, words, showLetters = true, colorRows = false, answerWord = '') {
+  const gridDiv = document.querySelector(containerSelector);
+  if (!gridDiv) return;
+  gridDiv.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement('div');
+      let classes = ['tile'];
+      let letter = '';
+      if (words[r]) {
+        if (showLetters) letter = words[r][c] ? words[r][c].toUpperCase() : '';
+        if (colorRows && answerWord) {
+          // Wordle-style coloring
+          const wordleColors = getWordleRowResult(words[r], answerWord);
+          classes.push(wordleColors[c]);
+        }
+      }
+      tile.textContent = letter;
+      tile.className = classes.join(' ');
+      gridDiv.appendChild(tile);
+    }
+  }
+}
+
+function renderGrid() {
+  // Top grid: show colored tiles, no letters
+  renderWordGrid('.grid', topGridWords, false, true, answer);
+}
+
+function renderStaticGrid() {
+  // Bottom grid: show letters, no coloring
+  renderWordGrid('.static-grid', staticGridWords, true, false, '');
+  // Add click handler to the entire grid
+  const staticGridDiv = document.querySelector('.static-grid');
+  if (!staticGridDiv) return;
+  staticGridDiv.onclick = (e) => {
+    const tile = e.target;
+    if (!tile.classList.contains('tile')) return;
+    const idx = Array.from(staticGridDiv.children).indexOf(tile);
+    if (idx === -1) return;
+    const row = Math.floor(idx / 5);
+    if (staticGridWords[row]) {
+      const emptyIdx = topGridWords.findIndex(w => !w);
+      if (emptyIdx !== -1) {
+        topGridWords[emptyIdx] = staticGridWords[row];
+        staticGridWords[row] = '';
+        renderGrid();
+        renderStaticGrid();
+      }
+    }
+  };
 }
 
 function renderGrid() {
@@ -68,22 +167,34 @@ function renderGrid() {
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
   for (let r = 0; r < MAX_GUESSES; r++) {
+    let wordleColors = null;
+    // If topGridWords assigned, color each row as a guess
+    if (topGridWords[r] && answer) {
+      wordleColors = getWordleRowResult(topGridWords[r], answer);
+    }
     for (let c = 0; c < WORD_LENGTH; c++) {
       const tile = document.createElement('div');
-      tile.textContent = grid[r][c] || '';
-      let classes = ['tile'];
-      // Animate only the last filled cell
-      if (lastFilled.row === r && lastFilled.col === c) {
-        classes.push('filled');
-      } else if (r === currentRow && c < currentCol && grid[r][c]) {
-        // Add outline to previously entered letters in current row
-        classes.push('filled-outline');
+      // If topGridWords assigned, show only colored fill, no letter
+      if (topGridWords[r]) {
+        tile.textContent = '';
+        let classes = ['tile', wordleColors ? wordleColors[c] : 'absent'];
+        tile.className = classes.join(' ');
+      } else {
+        tile.textContent = grid[r][c] || '';
+        let classes = ['tile'];
+        // Animate only the last filled cell
+        if (lastFilled.row === r && lastFilled.col === c) {
+          classes.push('filled');
+        } else if (r === currentRow && c < currentCol && grid[r][c]) {
+          // Add outline to previously entered letters in current row
+          classes.push('filled-outline');
+        }
+        if (r < currentRow) {
+          const result = getTileResult(r, c);
+          classes.push(result);
+        }
+        tile.className = classes.join(' ');
       }
-      if (r < currentRow) {
-        const result = getTileResult(r, c);
-        classes.push(result);
-      }
-      tile.className = classes.join(' ');
       gridDiv.appendChild(tile);
     }
   }
@@ -220,22 +331,4 @@ function showMessage(msg, duration = 2000) {
   }
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.metaKey) return; // Allow Cmd+R, Cmd+Shift+R, etc. to work as browser shortcuts
-  if (isGameOver) return;
-  if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
-    e.preventDefault();
-    handleKey(e.key);
-  }
-});
-
-window.onload = () => {
-  console.debug('window.onload');
-  // Hide toast on load
-  const toast = document.getElementById('toast');
-  if (toast) {
-    toast.textContent = '';
-    toast.classList.remove('show');
-  }
-  loadWordLists();
-};
+//# sourceMappingURL=game.js.map

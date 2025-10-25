@@ -286,6 +286,39 @@ header {
   display: block;
 }
 
+#color-btn {
+  background: var(--color-correct);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0 1.5em;
+  height: 60px;
+  min-width: 90px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  cursor: pointer;
+  transition: background 0.15s, filter 0.15s, box-shadow 0.15s;
+  outline: none;
+  margin-left: 16px;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#color-btn:hover:not(:disabled) {
+  filter: brightness(0.93);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+#color-btn:active:not(:disabled) {
+  filter: brightness(0.85);
+}
+#color-btn:disabled {
+  background: #d3d6da;
+  color: #888;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 @media (max-width: 600px) {
   .tile {
     width: 38px;
@@ -313,6 +346,13 @@ header {
   header {
     font-size: 1.25rem;
   }
+  #color-btn {
+    font-size: 1rem;
+    height: 38px;
+    min-width: 60px;
+    padding: 0 1em;
+    border-radius: 6px;
+  }
 }
 
 @media (max-width: 400px) {
@@ -329,5 +369,39 @@ header {
   .key-row .key:first-child,
   .key-row .key:last-child {
     max-width: 50px;
+  }
+}
+
+/* Target color grid styles */
+.target-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0.25rem 0 0.1rem 0;
+  padding: 0;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  justify-content: center;
+  width: auto;
+  min-width: 0;
+}
+.target-grid .grid-row {
+  gap: 2px;
+}
+.target-grid .tile {
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+  border-radius: 4px;
+  border-width: 1.5px;
+  pointer-events: none;
+  opacity: 0.95;
+}
+@media (max-width: 600px) {
+  .target-grid .tile {
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    border-radius: 3px;
   }
 }

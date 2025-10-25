@@ -21,7 +21,11 @@ function getWordleRowResult(guess, answer) {
   return result;
 }
 // Hidden words for each row in top grid
+// Words assigned to each row in top grid for coloring reference
+let assignedWords = ['', '', '', '', ''];
+// Words filled by the player in top grid (initially empty)
 let topGridWords = ['', '', '', '', ''];
+let colorReveal = false;
 // Words to display in bottom grid
 let staticGridWords = ['', '', '', '', ''];
 
@@ -70,6 +74,7 @@ function renderBottomGrid() {
           staticGridWords[rowIdx] = '';
           renderTopGrid();
           renderBottomGrid();
+          updateColorButton();
         }
       }
     };
@@ -79,6 +84,7 @@ function renderBottomGrid() {
 // Ensure game initializes on page load
 window.onload = () => {
   loadWordLists();
+  updateColorButton();
 };
 // Wordle Clone JS
 const WORD_LENGTH = 5;
@@ -121,8 +127,10 @@ function startGame() {
       used.add(answerList[idx]);
     }
   }
-  topGridWords = [...selected];
+  assignedWords = [...selected];
+  topGridWords = ['', '', '', '', ''];
   answer = selected[4]; // 5th word is the answer
+  console.log('Answer word for coloring:', answer);
   currentRow = 0;
   currentCol = 0;
   isGameOver = false;
@@ -130,9 +138,35 @@ function startGame() {
   lastFilled = { row: null, col: null };
   // Shuffle and assign to bottom grid
   staticGridWords = [...selected].sort(() => Math.random() - 0.5);
+  renderTargetGrid();
   renderTopGrid();
   renderKeyboard();
   renderBottomGrid();
+}
+
+function renderTargetGrid() {
+  // Show the 5 assigned words colored against the answer word, display letters
+  const gridDiv = document.querySelector('.target-grid');
+  if (!gridDiv) return;
+  gridDiv.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'grid-row';
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement('div');
+      let classes = ['tile'];
+      let letter = '';
+      if (assignedWords[r]) {
+        letter = assignedWords[r][c] ? assignedWords[r][c].toUpperCase() : '';
+        const wordleColors = getWordleRowResult(assignedWords[r], assignedWords[4]);
+        classes.push(wordleColors[c]);
+      }
+      tile.textContent = letter;
+      tile.className = classes.join(' ');
+      rowDiv.appendChild(tile);
+    }
+    gridDiv.appendChild(rowDiv);
+  }
 }
 
 // Shared grid rendering function for 5x5 grids
@@ -168,6 +202,8 @@ function renderTopGrid() {
   const gridDiv = document.querySelector('.top-grid');
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
+  // Determine the user's answer word (last row)
+  const userAnswer = topGridWords[4] && colorReveal ? topGridWords[4] : null;
   for (let r = 0; r < 5; r++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'grid-row';
@@ -175,13 +211,13 @@ function renderTopGrid() {
       const tile = document.createElement('div');
       let classes = ['tile'];
       let letter = '';
-      // Only show letters if the word was placed by user (not initial)
-      if (topGridWords[r] && staticGridWords.indexOf(topGridWords[r]) === -1) {
+      // Only show letters if the word was placed by user
+      if (topGridWords[r]) {
         letter = topGridWords[r][c] ? topGridWords[r][c].toUpperCase() : '';
       }
-      if (topGridWords[r]) {
-        // Wordle-style coloring
-        const wordleColors = getWordleRowResult(topGridWords[r], answer);
+      if (topGridWords[r] && colorReveal && userAnswer) {
+        // Color using the last row as the answer
+        const wordleColors = getWordleRowResult(topGridWords[r], userAnswer);
         classes.push(wordleColors[c]);
       }
       tile.textContent = letter;
@@ -374,6 +410,23 @@ function submitGuess() {
   }, WORD_LENGTH * 350 + 350);
 }
 
+// Enable/disable Color button based on topGridWords
+function updateColorButton() {
+  const btn = document.getElementById('color-btn');
+  if (!btn) return;
+  const allFilled = topGridWords.every(w => w && w.length === 5);
+  btn.disabled = !allFilled;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('color-btn');
+  if (!btn) return;
+  btn.onclick = () => {
+    colorReveal = true;
+    renderTopGrid();
+    btn.disabled = true;
+  };
+});
 
 function showMessage(msg, duration = 2000) {
   const toast = document.getElementById('toast');
@@ -386,5 +439,3 @@ function showMessage(msg, duration = 2000) {
     }, duration);
   }
 }
-
-//# sourceMappingURL=game.js.map

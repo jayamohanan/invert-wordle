@@ -1,47 +1,32 @@
-.tile.tile-outline {
-  background: transparent !important;
-  color: transparent !important;
-  border-width: 2px !important;
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('fonts/clear-sans/clear-sans-regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
-.outline-correct {
-  background: var(--color-correct) !important;
-  border-color: var(--color-correct) !important;
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('fonts/clear-sans/clear-sans-bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
 }
-.outline-present {
-  background: var(--color-present) !important;
-  border-color: var(--color-present) !important;
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('fonts/clear-sans/clear-sans-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
 }
-.outline-absent {
-  background: var(--color-absent) !important;
-  border-color: var(--color-absent) !important;
-}
-/* Text between grids */
-.between-grids-text {
-  margin: 5px 0;
-  text-align: center;
-  font-size: 1.1rem;
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('fonts/clear-sans/clear-sans-medium.woff') format('woff');
   font-weight: 500;
-  color: #444;
+  font-style: normal;
+  font-display: swap;
 }
-/* Static grid styles */
-/* Bottom grid styles */
-.bottom-grid-container {
-  margin-top: 5px;
-  display: flex;
-  justify-content: center;
-}
-.bottom-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  justify-content: center;
-  width: auto;
-}
-/* Wordle Clone Styles */
+
 :root {
   --color-correct: #6aaa64;
   --color-present: #c9b458;

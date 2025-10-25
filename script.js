@@ -59,6 +59,20 @@ function renderBottomGrid() {
         rowDiv._dragCopy = null;
       }
     });
+    rowDiv.onclick = function() {
+      console.log('Bottom grid row clicked:', rowIdx, 'Word:', staticGridWords[rowIdx]);
+      if (staticGridWords[rowIdx]) {
+        console.log('topGridWords before:', topGridWords);
+        const emptyIdx = topGridWords.findIndex(w => !w);
+        console.log('Empty index in top grid:', emptyIdx);
+        if (emptyIdx !== -1) {
+          topGridWords[emptyIdx] = staticGridWords[rowIdx];
+          staticGridWords[rowIdx] = '';
+          renderTopGrid();
+          renderBottomGrid();
+        }
+      }
+    };
   });
 }
 
@@ -150,35 +164,59 @@ function renderWordGrid(containerSelector, words, showLetters = true, colorRows 
 }
 
 function renderTopGrid() {
-  // Top grid: show colored tiles, no letters
-  renderWordGrid('.top-grid', topGridWords, false, true, answer);
+  // Top grid: show colored tiles, only show letters for rows filled by user
+  const gridDiv = document.querySelector('.top-grid');
+  if (!gridDiv) return;
+  gridDiv.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'grid-row';
+    for (let c = 0; c < 5; c++) {
+      const tile = document.createElement('div');
+      let classes = ['tile'];
+      let letter = '';
+      // Only show letters if the word was placed by user (not initial)
+      if (topGridWords[r] && staticGridWords.indexOf(topGridWords[r]) === -1) {
+        letter = topGridWords[r][c] ? topGridWords[r][c].toUpperCase() : '';
+      }
+      if (topGridWords[r]) {
+        // Wordle-style coloring
+        const wordleColors = getWordleRowResult(topGridWords[r], answer);
+        classes.push(wordleColors[c]);
+      }
+      tile.textContent = letter;
+      tile.className = classes.join(' ');
+      rowDiv.appendChild(tile);
+    }
+    gridDiv.appendChild(rowDiv);
+  }
 }
 
-function renderBottomGrid() {
-  // Bottom grid: show letters, no coloring
-  renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
-  // Add click handler to the entire grid
-  const bottomGridDiv = document.querySelector('.bottom-grid');
-  if (!bottomGridDiv) return;
-  bottomGridDiv.onclick = (e) => {
-    const tile = e.target;
-    if (!tile.classList.contains('tile')) return;
-    // Find the row div that was clicked
-    const rowDiv = tile.parentElement;
-    const rowIdx = Array.from(bottomGridDiv.children).indexOf(rowDiv);
-    console.log('Bottom grid row clicked:', rowIdx);
-    if (rowIdx === -1) return;
-    if (staticGridWords[rowIdx]) {
-      const emptyIdx = topGridWords.findIndex(w => !w);
-      if (emptyIdx !== -1) {
-        topGridWords[emptyIdx] = staticGridWords[rowIdx];
-        staticGridWords[rowIdx] = '';
-        renderTopGrid();
-        renderBottomGrid();
-      }
-    }
-  };
-}
+// function renderBottomGrid() {
+//   // Bottom grid: show letters, no coloring
+//   renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
+//   // Add click handler to the entire grid
+//   const bottomGridDiv = document.querySelector('.bottom-grid');
+//   if (!bottomGridDiv) return;
+//   bottomGridDiv.onclick = (e) => {
+//     const tile = e.target;
+//     if (!tile.classList.contains('tile')) return;
+//     // Find the row div that was clicked
+//     const rowDiv = tile.parentElement;
+//     const rowIdx = Array.from(bottomGridDiv.children).indexOf(rowDiv);
+//     console.log('rbg Bottom grid row clicked:', rowIdx);
+//     if (rowIdx === -1) return;
+//     if (staticGridWords[rowIdx]) {
+//       const emptyIdx = topGridWords.findIndex(w => !w);
+//       if (emptyIdx !== -1) {
+//         topGridWords[emptyIdx] = staticGridWords[rowIdx];
+//         staticGridWords[rowIdx] = '';
+//         renderTopGrid();
+//         renderBottomGrid();
+//       }
+//     }
+//   };
+// }
 
 function renderGrid() {
   const gridDiv = document.querySelector('.top-grid');

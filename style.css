@@ -92,6 +92,7 @@ header {
   flex: 0 0 auto;
   justify-content: center;
   width: auto;
+  transition: all 0.2s ease;
 }
 
 .grid-row {
@@ -99,6 +100,24 @@ header {
   gap: 4px;
   align-items: center;
   flex-direction: row;
+  cursor: grab;
+  transition: all 0.2s ease-in-out;
+  transform-origin: center;
+}
+
+.grid-row:active {
+  cursor: grabbing;
+}
+
+.grid-row.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.grid-row.drag-over {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .static-row {

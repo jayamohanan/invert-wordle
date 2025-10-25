@@ -145,7 +145,7 @@ function startGame() {
 }
 
 function renderTargetGrid() {
-  // Show the 5 assigned words colored against the answer word, display letters
+  // Show the 5 assigned words colored against the answer word, but do not display letters
   const gridDiv = document.querySelector('.target-grid');
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
@@ -155,13 +155,11 @@ function renderTargetGrid() {
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
-      let letter = '';
       if (assignedWords[r]) {
-        letter = assignedWords[r][c] ? assignedWords[r][c].toUpperCase() : '';
         const wordleColors = getWordleRowResult(assignedWords[r], assignedWords[4]);
         classes.push(wordleColors[c]);
       }
-      tile.textContent = letter;
+      tile.textContent = '';
       tile.className = classes.join(' ');
       rowDiv.appendChild(tile);
     }

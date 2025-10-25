@@ -423,8 +423,37 @@ document.addEventListener('DOMContentLoaded', () => {
     colorReveal = true;
     renderTopGrid();
     btn.disabled = true;
+    checkGameStatus();
   };
 });
+
+function checkGameStatus() {
+  // Compare color pattern of top grid to sample grid
+  // Sample grid: assignedWords vs assignedWords[4]
+  // Top grid: topGridWords vs topGridWords[4]
+  if (!topGridWords.every(w => w && w.length === 5)) return;
+  const sampleColors = [];
+  const userColors = [];
+  for (let r = 0; r < 5; r++) {
+    sampleColors.push(getWordleRowResult(assignedWords[r], assignedWords[4]));
+    userColors.push(getWordleRowResult(topGridWords[r], topGridWords[4]));
+  }
+  let match = true;
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      if (sampleColors[r][c] !== userColors[r][c]) {
+        match = false;
+        break;
+      }
+    }
+    if (!match) break;
+  }
+  if (match) {
+    showMessage('🎉 Colors match! You win! 🎉', 3000);
+  } else {
+    showMessage('❌ Colors do not match. Try again!', 3000);
+  }
+}
 
 function showMessage(msg, duration = 2000) {
   const toast = document.getElementById('toast');

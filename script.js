@@ -37,48 +37,63 @@ function renderBottomGrid() {
   // Make each row draggable (attach listeners to row divs)
   Array.from(bottomGridDiv.children).forEach((rowDiv, rowIdx) => {
     rowDiv.setAttribute('draggable', 'true');
-    rowDiv.addEventListener('dragstart', function(e) {
-      console.log('Drag started for row', rowIdx);
-      // Create a visual copy for dragging
-      const dragCopy = rowDiv.cloneNode(true);
-      dragCopy.style.opacity = '1';
-      dragCopy.style.background = '#eee';
-      dragCopy.style.position = 'fixed';
-      dragCopy.style.pointerEvents = 'none';
-      dragCopy.style.zIndex = '1000';
-      dragCopy.style.left = '-9999px';
-      dragCopy.style.top = '-9999px';
-      dragCopy.style.width = rowDiv.offsetWidth + 'px';
-      dragCopy.style.height = rowDiv.offsetHeight + 'px';
-      document.body.appendChild(dragCopy);
-      e.dataTransfer.setDragImage(dragCopy, rowDiv.offsetWidth/2, rowDiv.offsetHeight/2);
-      rowDiv.style.visibility = 'hidden';
-      e.dataTransfer.setData('text/plain', rowIdx);
-      rowDiv._dragCopy = dragCopy;
-    });
-    rowDiv.addEventListener('dragend', function(e) {
-      rowDiv.style.visibility = '';
-      if (rowDiv._dragCopy) {
-        document.body.removeChild(rowDiv._dragCopy);
-        rowDiv._dragCopy = null;
+    rowDiv.ondragstart = function(e) {
+      if (!staticGridWords[rowIdx]) {
+        e.preventDefault();
+        return;
       }
-    });
+      // Create a ghost node for drag visual
+      const ghost = rowDiv.cloneNode(true);
+      ghost.style.position = 'absolute';
+      ghost.style.top = '-9999px';
+      ghost.style.left = '-9999px';
+      ghost.style.opacity = '0.7';
+      ghost.style.pointerEvents = 'none';
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+      setTimeout(() => document.body.removeChild(ghost), 0);
+      e.dataTransfer.setData('text/plain', rowIdx);
+    };
+    rowDiv.ondragend = function(e) {
+      // ...existing code if any...
+    };
     rowDiv.onclick = function() {
-      console.log('Bottom grid row clicked:', rowIdx, 'Word:', staticGridWords[rowIdx]);
       if (staticGridWords[rowIdx]) {
-        console.log('topGridWords before:', topGridWords);
         const emptyIdx = topGridWords.findIndex(w => !w);
-        console.log('Empty index in top grid:', emptyIdx);
         if (emptyIdx !== -1) {
           topGridWords[emptyIdx] = staticGridWords[rowIdx];
           staticGridWords[rowIdx] = '';
           renderTopGrid();
-          renderBottomGrid();
           updateColorButton();
+          setTimeout(() => { rowDiv.style.visibility = 'hidden'; }, 0);
         }
       }
     };
   });
+
+  // Make top grid rows droppable
+  const topGridDiv = document.querySelector('.top-grid');
+  if (topGridDiv) {
+    Array.from(topGridDiv.children).forEach((rowDiv, rowIdx) => {
+      rowDiv.ondragover = function(e) {
+        if (!topGridWords[rowIdx]) {
+          e.preventDefault();
+        }
+      };
+      rowDiv.ondrop = function(e) {
+        e.preventDefault();
+        const bottomIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!staticGridWords[bottomIdx]) return;
+        if (!topGridWords[rowIdx]) {
+          topGridWords[rowIdx] = staticGridWords[bottomIdx];
+          staticGridWords[bottomIdx] = '';
+          renderTopGrid();
+          renderBottomGrid();
+          updateColorButton();
+        }
+      };
+    });
+  }
 }
 
 // Ensure game initializes on page load

@@ -1,3 +1,7 @@
+.tile.selected {
+  border-color: #2196f3 !important; /* blue border for selected row */
+  z-index: 2;
+}
 :root {
   --color-correct: #6aaa64;
   --color-present: #c9b458;

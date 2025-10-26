@@ -309,17 +309,13 @@ function renderTopGrid() {
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
   const userAnswer = topGridWords[4] && colorReveal ? topGridWords[4] : null;
+  // Track second selected row for visual feedback
+  let secondSelectedRow = renderTopGrid._secondSelectedRow;
   for (let r = 0; r < 5; r++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'grid-row';
     rowDiv.setAttribute('data-index', r);
     rowDiv.style.cursor = 'pointer';
-    if (selectedRow === r) {
-      rowDiv.style.outline = '3px solid #c9b458';
-      rowDiv.style.zIndex = 2;
-    } else {
-      rowDiv.style.outline = '';
-    }
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
@@ -331,6 +327,9 @@ function renderTopGrid() {
         const wordleColors = getWordleRowResult(topGridWords[r], userAnswer);
         classes.push(wordleColors[c]);
       }
+      if (selectedRow === r || secondSelectedRow === r) {
+        classes.push('selected');
+      }
       tile.textContent = letter;
       tile.className = classes.join(' ');
       rowDiv.appendChild(tile);
@@ -339,13 +338,21 @@ function renderTopGrid() {
       if (animatingSwap) return;
       if (selectedRow === null) {
         selectedRow = r;
+        renderTopGrid._secondSelectedRow = undefined;
         renderTopGrid();
       } else if (selectedRow === r) {
         selectedRow = null;
+        renderTopGrid._secondSelectedRow = undefined;
         renderTopGrid();
       } else {
-        // Swap rows with animation
-        animateSwap(selectedRow, r);
+        // Mark both rows as selected for visual feedback
+        renderTopGrid._secondSelectedRow = r;
+        renderTopGrid();
+        // Swap rows with animation after a short delay
+        setTimeout(() => {
+          animateSwap(selectedRow, r);
+          renderTopGrid._secondSelectedRow = undefined;
+        }, 150);
       }
     };
     gridDiv.appendChild(rowDiv);

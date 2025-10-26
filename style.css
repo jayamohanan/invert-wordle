@@ -53,6 +53,8 @@ body {
   align-items: center;
   justify-content: stretch;
   overflow: hidden;
+  overscroll-behavior: none; /* Prevents elastic scroll/bounce on mobile */
+  touch-action: none; 
 }
 
 header {

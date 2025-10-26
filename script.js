@@ -40,6 +40,8 @@ let currentDrag = {
   word: null,
   snapBack: false
 };
+let rowCount = 5;
+let columnCount = 5;
 
 function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
@@ -277,15 +279,16 @@ function renderTargetGrid() {
   const gridDiv = document.querySelector('.target-grid');
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
-  for (let r = 0; r < 5; r++) {
+  for (let r = 0; r < rowCount; r++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'grid-row';
-    for (let c = 0; c < 5; c++) {
+    for (let c = 0; c < columnCount; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
       if (assignedWords[r]) {
         const wordleColors = getWordleRowResult(assignedWords[r], assignedWords[4]);
         classes.push(wordleColors[c]);
+        console.log('row', r, 'column', c, 'colors', wordleColors);
       }
       tile.textContent = '';
       tile.className = classes.join(' ');

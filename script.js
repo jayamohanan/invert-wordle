@@ -28,6 +28,18 @@ let topGridWords = ['', '', '', '', ''];
 let colorReveal = false;
 // Words to display in bottom grid
 let staticGridWords = ['', '', '', '', ''];
+// Original bottom grid order at game start (for snap-back reference)
+let originalBottomGridWords = ['', '', '', '', ''];
+// Move history for undo functionality
+let moveHistory = [];
+// Track current drag state
+let currentDrag = {
+  active: false,
+  source: null,
+  index: -1,
+  word: null,
+  snapBack: false
+};
 
 function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
@@ -36,12 +48,40 @@ function renderBottomGrid() {
   if (!bottomGridDiv) return;
   // Make each row draggable (attach listeners to row divs)
   Array.from(bottomGridDiv.children).forEach((rowDiv, rowIdx) => {
-    rowDiv.setAttribute('draggable', 'true');
+    rowDiv.setAttribute('draggable', staticGridWords[rowIdx] ? 'true' : 'false');
+    rowDiv.setAttribute('data-source', 'bottom');
+    rowDiv.setAttribute('data-index', rowIdx);
+    
+    // Hide empty rows (words that were moved to top grid)
+    if (!staticGridWords[rowIdx]) {
+      rowDiv.style.visibility = 'hidden';
+    } else {
+      rowDiv.style.visibility = 'visible';
+    }
+    
+    // Add fade-in animation class if word just appeared (from snap-back)
+    if (staticGridWords[rowIdx] && currentDrag.word === staticGridWords[rowIdx] && currentDrag.snapBack) {
+      rowDiv.classList.add('fade-in');
+      // Remove animation class after it completes
+      setTimeout(() => {
+        rowDiv.classList.remove('fade-in');
+      }, 300);
+    }
+    
     rowDiv.ondragstart = function(e) {
       if (!staticGridWords[rowIdx]) {
         e.preventDefault();
         return;
       }
+      // Track drag state
+      currentDrag = {
+        active: true,
+        source: 'bottom',
+        index: rowIdx,
+        word: staticGridWords[rowIdx],
+        snapBack: false
+      };
+      
       // Create a ghost node for drag visual
       const ghost = rowDiv.cloneNode(true);
       ghost.style.position = 'absolute';
@@ -52,23 +92,53 @@ function renderBottomGrid() {
       document.body.appendChild(ghost);
       e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
       setTimeout(() => document.body.removeChild(ghost), 0);
-      e.dataTransfer.setData('text/plain', rowIdx);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('source', 'bottom');
+      e.dataTransfer.setData('index', rowIdx);
+      
+      // Hide the original row to give feel that it's being dragged
+      setTimeout(() => {
+        rowDiv.style.visibility = 'hidden';
+      }, 0);
     };
+    
     rowDiv.ondragend = function(e) {
-      // ...existing code if any...
+      // Only show the row again if the word is still in bottom grid (drop failed/cancelled)
+      if (staticGridWords[rowIdx]) {
+        rowDiv.style.visibility = 'visible';
+      }
+      // If word was successfully moved to top, keep it hidden
+      
+      // If dropped outside valid target (dropEffect is 'none'), do nothing
+      // The word is still in bottom grid
+      currentDrag.active = false;
+      currentDrag.snapBack = false;
     };
+    
+    // TEMPORARILY DISABLED: Click to auto-place in top grid
+    // Uncomment to re-enable this feature
+    /*
     rowDiv.onclick = function() {
       if (staticGridWords[rowIdx]) {
         const emptyIdx = topGridWords.findIndex(w => !w);
         if (emptyIdx !== -1) {
+          // Record move for undo
+          moveHistory.push({
+            from: { grid: 'bottom', index: rowIdx },
+            to: { grid: 'top', index: emptyIdx },
+            word: staticGridWords[rowIdx]
+          });
+          
           topGridWords[emptyIdx] = staticGridWords[rowIdx];
           staticGridWords[rowIdx] = '';
           renderTopGrid();
+          renderBottomGrid();
           updateColorButton();
-          setTimeout(() => { rowDiv.style.visibility = 'hidden'; }, 0);
+          updateUndoButton();
         }
       }
     };
+    */
   });
 
   // Make top grid rows droppable
@@ -78,18 +148,56 @@ function renderBottomGrid() {
       rowDiv.ondragover = function(e) {
         if (!topGridWords[rowIdx]) {
           e.preventDefault();
+          // Add highlight class when dragging over empty row
+          rowDiv.classList.add('drag-hover');
         }
       };
+      
+      rowDiv.ondragleave = function(e) {
+        // Remove highlight when leaving the row
+        rowDiv.classList.remove('drag-hover');
+      };
+      
       rowDiv.ondrop = function(e) {
         e.preventDefault();
-        const bottomIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-        if (!staticGridWords[bottomIdx]) return;
+        // Remove highlight on drop
+        rowDiv.classList.remove('drag-hover');
+        
+        const source = e.dataTransfer.getData('source');
+        const fromIdx = parseInt(e.dataTransfer.getData('index'), 10);
+        
+        if (source === 'bottom' && !staticGridWords[fromIdx]) return;
+        if (source === 'top' && !topGridWords[fromIdx]) return;
+        
         if (!topGridWords[rowIdx]) {
-          topGridWords[rowIdx] = staticGridWords[bottomIdx];
-          staticGridWords[bottomIdx] = '';
+          // Mark drag as completed successfully
+          currentDrag.active = false;
+          
+          if (source === 'bottom') {
+            // Record move for undo
+            moveHistory.push({
+              from: { grid: 'bottom', index: fromIdx },
+              to: { grid: 'top', index: rowIdx },
+              word: staticGridWords[fromIdx]
+            });
+            
+            topGridWords[rowIdx] = staticGridWords[fromIdx];
+            staticGridWords[fromIdx] = '';
+          } else if (source === 'top') {
+            // Record move for undo
+            moveHistory.push({
+              from: { grid: 'top', index: fromIdx },
+              to: { grid: 'top', index: rowIdx },
+              word: topGridWords[fromIdx]
+            });
+            
+            topGridWords[rowIdx] = topGridWords[fromIdx];
+            topGridWords[fromIdx] = '';
+          }
           renderTopGrid();
           renderBottomGrid();
           updateColorButton();
+          updateUndoButton();
         }
       };
     });
@@ -153,10 +261,15 @@ function startGame() {
   lastFilled = { row: null, col: null };
   // Shuffle and assign to bottom grid
   staticGridWords = [...selected].sort(() => Math.random() - 0.5);
+  // Store the original bottom grid order for snap-back
+  originalBottomGridWords = [...staticGridWords];
+  moveHistory = []; // Clear move history
+  console.log('Original bottom grid order:', originalBottomGridWords);
   renderTargetGrid();
   renderTopGrid();
   renderKeyboard();
   renderBottomGrid();
+  updateUndoButton();
 }
 
 function renderTargetGrid() {
@@ -220,6 +333,11 @@ function renderTopGrid() {
   for (let r = 0; r < 5; r++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'grid-row';
+    // Disable dragging for top grid rows - they use click instead
+    rowDiv.setAttribute('draggable', 'false');
+    rowDiv.setAttribute('data-source', 'top');
+    rowDiv.setAttribute('data-index', r);
+    
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
@@ -237,8 +355,59 @@ function renderTopGrid() {
       tile.className = classes.join(' ');
       rowDiv.appendChild(tile);
     }
+    
+    // Add click handler to filled rows - clicking returns word to bottom grid
+    if (topGridWords[r]) {
+      rowDiv.style.cursor = 'pointer';
+      rowDiv.onclick = function(e) {
+        // Prevent click if currently dragging
+        if (currentDrag.active) return;
+        
+        const word = topGridWords[r];
+        console.log('Top grid row clicked:', r, word);
+        
+        // Find original position in bottom grid
+        const originalBottomIdx = findOriginalBottomIndex(word);
+        console.log('Returning to bottom grid position:', originalBottomIdx);
+        
+        if (originalBottomIdx !== -1) {
+          // Return word to its original bottom grid position
+          staticGridWords[originalBottomIdx] = word;
+          topGridWords[r] = '';
+          
+          // Mark as snap-back for animation
+          currentDrag.word = word;
+          currentDrag.snapBack = true;
+          
+          // Remove any moves from history that involved this word being placed in this top grid row
+          moveHistory = moveHistory.filter(move => 
+            !(move.to.grid === 'top' && move.to.index === r && move.word === word)
+          );
+          
+          console.log('Word returned to bottom grid via click');
+          
+          // Render with animation
+          renderTopGrid();
+          renderBottomGrid();
+          updateColorButton();
+          updateUndoButton();
+          
+          // Clear snap-back flag after animation
+          setTimeout(() => {
+            currentDrag.snapBack = false;
+          }, 300);
+        }
+      };
+    }
+    
     gridDiv.appendChild(rowDiv);
   }
+}
+
+// Helper function to find original position of a word in bottom grid
+// Helper function to find original position of a word in bottom grid
+function findOriginalBottomIndex(word) {
+  return originalBottomGridWords.findIndex(w => w === word);
 }
 
 // function renderBottomGrid() {
@@ -431,15 +600,55 @@ function updateColorButton() {
   btn.disabled = !allFilled;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('color-btn');
+// Enable/disable Undo button based on move history
+function updateUndoButton() {
+  const btn = document.getElementById('undo-btn');
   if (!btn) return;
-  btn.onclick = () => {
-    colorReveal = true;
-    renderTopGrid();
-    btn.disabled = true;
-    checkGameStatus();
-  };
+  btn.disabled = moveHistory.length === 0;
+}
+
+// Undo the last move
+function undoLastMove() {
+  if (moveHistory.length === 0) return;
+  
+  const lastMove = moveHistory.pop();
+  
+  // Reverse the move
+  if (lastMove.from.grid === 'bottom' && lastMove.to.grid === 'top') {
+    // Move word back from top to bottom
+    staticGridWords[lastMove.from.index] = lastMove.word;
+    topGridWords[lastMove.to.index] = '';
+  } else if (lastMove.from.grid === 'top' && lastMove.to.grid === 'top') {
+    // Move word back within top grid
+    topGridWords[lastMove.from.index] = lastMove.word;
+    topGridWords[lastMove.to.index] = '';
+  }
+  
+  renderTopGrid();
+  renderBottomGrid();
+  updateColorButton();
+  updateUndoButton();
+  
+  console.log('Undid move:', lastMove);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const colorBtn = document.getElementById('color-btn');
+  if (colorBtn) {
+    colorBtn.onclick = () => {
+      colorReveal = true;
+      renderTopGrid();
+      colorBtn.disabled = true;
+      checkGameStatus();
+    };
+  }
+  
+  const undoBtn = document.getElementById('undo-btn');
+  if (undoBtn) {
+    undoBtn.onclick = () => {
+      undoLastMove();
+    };
+  }
 });
 
 function checkGameStatus() {

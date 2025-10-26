@@ -99,6 +99,33 @@ header {
   gap: 4px;
   align-items: center;
   flex-direction: row;
+  transition: opacity 0.2s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.grid-row[draggable="true"] {
+  cursor: grab;
+}
+
+.grid-row[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Clickable filled rows in top grid */
+.top-grid .grid-row[style*="cursor: pointer"]:hover {
+  filter: brightness(0.95);
+}
+
+.top-grid .grid-row[style*="cursor: pointer"]:active {
+  filter: brightness(0.9);
+}
+
+/* Draggable rows in bottom grid */
+.bottom-grid .grid-row[draggable="true"]:hover {
+  filter: brightness(0.95);
+}
+
+.bottom-grid .grid-row[draggable="true"]:active {
+  filter: brightness(0.9);
 }
 
 .static-row {
@@ -120,12 +147,18 @@ header {
   text-transform: uppercase;
   background: var(--color-tile-bg);
   color: var(--color-header);
-  transition: transform 0.1s cubic-bezier(0.4, 0.6, 0.2, 1);
+  transition: transform 0.1s cubic-bezier(0.4, 0.6, 0.2, 1), border-color 0.2s ease;
   user-select: none;
   line-height: 1;
   box-sizing: border-box;
   transform-style: flat;
   transform-origin: center center;
+}
+
+/* Highlight empty rows when dragging over them */
+.grid-row.drag-hover .tile {
+  border-color: #565758;
+  border-width: 3px;
 }
 
 .tile.filled {
@@ -140,6 +173,21 @@ header {
 @keyframes pop {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.grid-row.fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
 
 .tile.correct {
@@ -285,7 +333,6 @@ header {
   cursor: pointer;
   transition: background 0.15s, filter 0.15s, box-shadow 0.15s;
   outline: none;
-  margin-left: 16px;
   letter-spacing: 0.04em;
   display: flex;
   align-items: center;
@@ -299,6 +346,39 @@ header {
   filter: brightness(0.85);
 }
 #color-btn:disabled {
+  background: #d3d6da;
+  color: #888;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#undo-btn {
+  background: #787c7e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 0 1.5em;
+  height: 60px;
+  min-width: 90px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  cursor: pointer;
+  transition: background 0.15s, filter 0.15s, box-shadow 0.15s;
+  outline: none;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#undo-btn:hover:not(:disabled) {
+  filter: brightness(0.93);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+#undo-btn:active:not(:disabled) {
+  filter: brightness(0.85);
+}
+#undo-btn:disabled {
   background: #d3d6da;
   color: #888;
   cursor: not-allowed;
@@ -331,7 +411,7 @@ header {
   header {
     font-size: 1.25rem;
   }
-  #color-btn {
+  #color-btn, #undo-btn {
     font-size: 1rem;
     height: 38px;
     min-width: 60px;

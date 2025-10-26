@@ -23,23 +23,12 @@ function getWordleRowResult(guess, answer) {
 // Hidden words for each row in top grid
 // Words assigned to each row in top grid for coloring reference
 let assignedWords = ['', '', '', '', ''];
-// Words filled by the player in top grid (initially empty)
+// Words in top grid (random order, all filled)
 let topGridWords = ['', '', '', '', ''];
 let colorReveal = false;
-// Words to display in bottom grid
-let staticGridWords = ['', '', '', '', ''];
-// Original bottom grid order at game start (for snap-back reference)
-let originalBottomGridWords = ['', '', '', '', ''];
-// Move history for undo functionality
-let moveHistory = [];
-// Track current drag state
-let currentDrag = {
-  active: false,
-  source: null,
-  index: -1,
-  word: null,
-  snapBack: false
-};
+// Track selected rows for swapping
+let selectedRow = null; // index of first selected row, or null
+let animatingSwap = false;
 let rowCount = 5;
 let columnCount = 5;
 
@@ -253,25 +242,14 @@ function startGame() {
     }
   }
   assignedWords = [...selected];
-  topGridWords = ['', '', '', '', ''];
+  // Shuffle for top grid (different order from sample grid)
+  topGridWords = [...selected].sort(() => Math.random() - 0.5);
   answer = selected[4]; // 5th word is the answer
-  console.log('Answer word for coloring:', answer);
-  currentRow = 0;
-  currentCol = 0;
-  isGameOver = false;
-  grid = Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill(''));
-  lastFilled = { row: null, col: null };
-  // Shuffle and assign to bottom grid
-  staticGridWords = [...selected].sort(() => Math.random() - 0.5);
-  // Store the original bottom grid order for snap-back
-  originalBottomGridWords = [...staticGridWords];
-  moveHistory = []; // Clear move history
-  console.log('Original bottom grid order:', originalBottomGridWords);
+  selectedRow = null;
+  animatingSwap = false;
   renderTargetGrid();
   renderTopGrid();
   renderKeyboard();
-  renderBottomGrid();
-  updateUndoButton();
 }
 
 function renderTargetGrid() {
@@ -327,30 +305,29 @@ function renderWordGrid(containerSelector, words, showLetters = true, colorRows 
 }
 
 function renderTopGrid() {
-  // Top grid: show colored tiles, only show letters for rows filled by user
   const gridDiv = document.querySelector('.top-grid');
   if (!gridDiv) return;
   gridDiv.innerHTML = '';
-  // Determine the user's answer word (last row)
   const userAnswer = topGridWords[4] && colorReveal ? topGridWords[4] : null;
   for (let r = 0; r < 5; r++) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'grid-row';
-    // Disable dragging for top grid rows - they use click instead
-    rowDiv.setAttribute('draggable', 'false');
-    rowDiv.setAttribute('data-source', 'top');
     rowDiv.setAttribute('data-index', r);
-    
+    rowDiv.style.cursor = 'pointer';
+    if (selectedRow === r) {
+      rowDiv.style.outline = '3px solid #c9b458';
+      rowDiv.style.zIndex = 2;
+    } else {
+      rowDiv.style.outline = '';
+    }
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       let classes = ['tile'];
       let letter = '';
-      // Only show letters if the word was placed by user
       if (topGridWords[r]) {
         letter = topGridWords[r][c] ? topGridWords[r][c].toUpperCase() : '';
       }
       if (topGridWords[r] && colorReveal && userAnswer) {
-        // Color using the last row as the answer
         const wordleColors = getWordleRowResult(topGridWords[r], userAnswer);
         classes.push(wordleColors[c]);
       }
@@ -358,53 +335,64 @@ function renderTopGrid() {
       tile.className = classes.join(' ');
       rowDiv.appendChild(tile);
     }
-    
-    // Add click handler to filled rows - clicking returns word to bottom grid
-    if (topGridWords[r]) {
-      rowDiv.style.cursor = 'pointer';
-      rowDiv.onclick = function(e) {
-        // Prevent click if currently dragging
-        if (currentDrag.active) return;
-        
-        const word = topGridWords[r];
-        console.log('Top grid row clicked:', r, word);
-        
-        // Find original position in bottom grid
-        const originalBottomIdx = findOriginalBottomIndex(word);
-        console.log('Returning to bottom grid position:', originalBottomIdx);
-        
-        if (originalBottomIdx !== -1) {
-          // Return word to its original bottom grid position
-          staticGridWords[originalBottomIdx] = word;
-          topGridWords[r] = '';
-          
-          // Mark as snap-back for animation
-          currentDrag.word = word;
-          currentDrag.snapBack = true;
-          
-          // Remove any moves from history that involved this word being placed in this top grid row
-          moveHistory = moveHistory.filter(move => 
-            !(move.to.grid === 'top' && move.to.index === r && move.word === word)
-          );
-          
-          console.log('Word returned to bottom grid via click');
-          
-          // Render with animation
-          renderTopGrid();
-          renderBottomGrid();
-          updateColorButton();
-          updateUndoButton();
-          
-          // Clear snap-back flag after animation
-          setTimeout(() => {
-            currentDrag.snapBack = false;
-          }, 300);
-        }
-      };
-    }
-    
+    rowDiv.onclick = function() {
+      if (animatingSwap) return;
+      if (selectedRow === null) {
+        selectedRow = r;
+        renderTopGrid();
+      } else if (selectedRow === r) {
+        selectedRow = null;
+        renderTopGrid();
+      } else {
+        // Swap rows with animation
+        animateSwap(selectedRow, r);
+      }
+    };
     gridDiv.appendChild(rowDiv);
   }
+}
+// Animate swapping two rows in the top grid
+function animateSwap(rowA, rowB) {
+  animatingSwap = true;
+  const gridDiv = document.querySelector('.top-grid');
+  const rowDivs = Array.from(gridDiv.children);
+  const rectA = rowDivs[rowA].getBoundingClientRect();
+  const rectB = rowDivs[rowB].getBoundingClientRect();
+  // Create ghost nodes
+  const ghostA = rowDivs[rowA].cloneNode(true);
+  const ghostB = rowDivs[rowB].cloneNode(true);
+  ghostA.style.position = ghostB.style.position = 'fixed';
+  ghostA.style.left = rectA.left + 'px';
+  ghostA.style.top = rectA.top + 'px';
+  ghostB.style.left = rectB.left + 'px';
+  ghostB.style.top = rectB.top + 'px';
+  ghostA.style.width = rectA.width + 'px';
+  ghostB.style.width = rectB.width + 'px';
+  ghostA.style.pointerEvents = ghostB.style.pointerEvents = 'none';
+  ghostA.style.zIndex = ghostB.style.zIndex = 1000;
+  document.body.appendChild(ghostA);
+  document.body.appendChild(ghostB);
+  // Hide originals
+  rowDivs[rowA].style.visibility = 'hidden';
+  rowDivs[rowB].style.visibility = 'hidden';
+  // Animate ghosts
+  requestAnimationFrame(() => {
+    ghostA.style.transition = ghostB.style.transition = 'top 0.35s, left 0.35s';
+    ghostA.style.top = rectB.top + 'px';
+    ghostB.style.top = rectA.top + 'px';
+    setTimeout(() => {
+      // Remove ghosts, show originals, swap data
+      document.body.removeChild(ghostA);
+      document.body.removeChild(ghostB);
+      // Swap words
+      const temp = topGridWords[rowA];
+      topGridWords[rowA] = topGridWords[rowB];
+      topGridWords[rowB] = temp;
+      selectedRow = null;
+      animatingSwap = false;
+      renderTopGrid();
+    }, 370);
+  });
 }
 
 // Helper function to find original position of a word in bottom grid

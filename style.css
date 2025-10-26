@@ -1,32 +1,3 @@
-@font-face {
-  font-family: 'Clear Sans';
-  src: url('fonts/clear-sans/clear-sans-regular.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Clear Sans';
-  src: url('fonts/clear-sans/clear-sans-bold.woff') format('woff');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Clear Sans';
-  src: url('fonts/clear-sans/clear-sans-light.woff') format('woff');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Clear Sans';
-  src: url('fonts/clear-sans/clear-sans-medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --color-correct: #6aaa64;
   --color-present: #c9b458;
@@ -81,6 +52,8 @@ header {
   padding: 0.2rem 0 0.2rem 0;
   box-sizing: border-box;
   min-height: 0;
+  gap: 16px;
+  margin-top: 16px;
 }
 
 /* Top grid styles */
@@ -130,21 +103,21 @@ header {
   filter: brightness(0.9);
 }
 
-.static-row {
+/* .static-row {
   display: flex;
   gap: 3px;
   align-items: center;
   flex-direction: row;
-}
+} */
 
 .tile {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border: 2px solid var(--color-tile-border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 2rem;
   font-weight: bold;
   text-transform: uppercase;
   background: var(--color-tile-bg);
@@ -456,9 +429,9 @@ header {
   gap: 0.7px;
 }
 .target-grid .tile {
-  width: 10px;
-  height: 10px;
-  font-size: 0.7rem;
+  width: 40px;
+  height: 40px;
+  /* font-size: 1.4rem; */
   border-radius: 0;
   border-width: 1px;
   pointer-events: none;

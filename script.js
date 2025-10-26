@@ -32,6 +32,11 @@ let animatingSwap = false;
 let rowCount = 5;
 let columnCount = 5;
 
+// Add at the top, after other state variables
+let validateChances = 3;
+let validateUsed = 0;
+let validateGameOver = false;
+
 function renderBottomGrid() {
   // Bottom grid: show letters, no coloring
   renderWordGrid('.bottom-grid', staticGridWords, true, false, '');
@@ -247,6 +252,9 @@ function startGame() {
   answer = selected[4]; // 5th word is the answer
   selectedRow = null;
   animatingSwap = false;
+  validateChances = 3;
+  validateUsed = 0;
+  validateGameOver = false;
   renderTargetGrid();
   renderTopGrid();
   renderKeyboard();
@@ -594,8 +602,8 @@ function submitGuess() {
 function updateColorButton() {
   const btn = document.getElementById('color-btn');
   if (!btn) return;
-  const allFilled = topGridWords.every(w => w && w.length === 5);
-  btn.disabled = !allFilled;
+  btn.disabled = false;
+  btn.textContent = `Validate(${validateChances - validateUsed})`;
 }
 
 // Enable/disable Undo button based on move history
@@ -634,10 +642,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const colorBtn = document.getElementById('color-btn');
   if (colorBtn) {
     colorBtn.onclick = () => {
+      if (validateGameOver) return;
       colorReveal = true;
       renderTopGrid();
-      colorBtn.disabled = true;
-      checkGameStatus();
+      validateUsed++;
+      updateColorButton();
+      if (checkGameStatus()) {
+        colorBtn.disabled = true;
+      } else if (validateUsed >= validateChances) {
+        validateGameOver = true;
+        colorBtn.disabled = true;
+        showMessage('❌ Game Over! Out of chances.', 3000);
+      }
     };
   }
   
@@ -649,11 +665,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Modify checkGameStatus to return true if win, false otherwise
 function checkGameStatus() {
-  // Compare color pattern of top grid to sample grid
-  // Sample grid: assignedWords vs assignedWords[4]
-  // Top grid: topGridWords vs topGridWords[4]
-  if (!topGridWords.every(w => w && w.length === 5)) return;
+  if (!topGridWords.every(w => w && w.length === 5)) return false;
   const sampleColors = [];
   const userColors = [];
   for (let r = 0; r < 5; r++) {
@@ -672,8 +686,16 @@ function checkGameStatus() {
   }
   if (match) {
     showMessage('🎉 Colors match! You win! 🎉', 3000);
+    validateGameOver = true;
+    return true;
   } else {
-    showMessage('❌ Colors do not match. Try again!', 3000);
+    showMessage('❌ Colors do not match. Try again!', 2000);
+    // Hide colors again so player can rearrange
+    setTimeout(() => {
+      colorReveal = false;
+      renderTopGrid();
+    }, 1200);
+    return false;
   }
 }
 

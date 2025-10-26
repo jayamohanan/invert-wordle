@@ -441,7 +441,7 @@ header {
 .target-grid {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.7px;
   margin: 0.25rem 0 0.1rem 0;
   padding: 0;
   box-sizing: border-box;
@@ -451,14 +451,14 @@ header {
   min-width: 0;
 }
 .target-grid .grid-row {
-  gap: 1px;
+  gap: 0.7px;
 }
 .target-grid .tile {
-  width: 14px;
-  height: 14px;
-  font-size: 1rem;
+  width: 10px;
+  height: 10px;
+  font-size: 0.7rem;
   border-radius: 0;
-  border-width: 1.5px;
+  border-width: 1px;
   pointer-events: none;
   opacity: 0.95;
 }
